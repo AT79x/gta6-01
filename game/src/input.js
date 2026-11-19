@@ -28,6 +28,23 @@ export function createInput(canvas) {
   let mouseY = 0;
   let mouseDown = false;
   let clicked = false;
+  // Touch driving: the stick's screen-space angle (null when centred) so the
+  // car steers toward the pushed direction instead of relative to its nose.
+  let driveAngle = null;
+  let driveMag = 0;
+  // World zoom: pinch on the canvas or the + / − buttons change it.
+  let zoom = (('ontouchstart' in window) || navigator.maxTouchPoints > 0)
+    && window.innerHeight > window.innerWidth ? 1.5 : 1;
+  const clampZoom = (z) => Math.max(0.7, Math.min(2.8, z));
+  const pointers = new Map();
+  let pinchDist = 0;
+  function pinchZoom() {
+    const pts = [...pointers.values()];
+    if (pts.length < 2) return;
+    const d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    if (pinchDist > 0 && d > 0) zoom = clampZoom(zoom * (d / pinchDist));
+    pinchDist = d;
+  }
 
   function press(code, event) {
     if (UP.has(code)) held.up = true;
@@ -70,21 +87,43 @@ export function createInput(canvas) {
     mouseDown = false;
   });
   canvas.addEventListener('pointermove', (event) => {
-    const rect = canvas.getBoundingClientRect();
-    mouseX = event.clientX - rect.left;
-    mouseY = event.clientY - rect.top;
-  });
-  canvas.addEventListener('pointerdown', (event) => {
-    if (event.button === 0) {
-      mouseDown = true;
-      clicked = true;
+    if (pointers.has(event.pointerId)) {
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (pointers.size >= 2) {
+        pinchZoom();
+        return;
+      }
     }
     const rect = canvas.getBoundingClientRect();
     mouseX = event.clientX - rect.left;
     mouseY = event.clientY - rect.top;
   });
+  canvas.addEventListener('pointerdown', (event) => {
+    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    const rect = canvas.getBoundingClientRect();
+    mouseX = event.clientX - rect.left;
+    mouseY = event.clientY - rect.top;
+    // A second finger starts a pinch: stop shooting and let it zoom instead.
+    if (pointers.size >= 2) {
+      mouseDown = false;
+      pinchDist = 0;
+      pinchZoom();
+      return;
+    }
+    if (event.button === 0) {
+      mouseDown = true;
+      clicked = true;
+    }
+  });
   window.addEventListener('pointerup', (event) => {
+    pointers.delete(event.pointerId);
+    if (pointers.size < 2) pinchDist = 0;
     if (event.button === 0) mouseDown = false;
+  });
+  window.addEventListener('pointercancel', (event) => {
+    pointers.delete(event.pointerId);
+    if (pointers.size < 2) pinchDist = 0;
+    mouseDown = false;
   });
 
   // --- Touch controls (phones/tablets): a virtual stick for movement and
@@ -118,7 +157,14 @@ export function createInput(canvas) {
       held.down = mag > 0.25 && ny > 0.35;
       held.left = mag > 0.25 && nx < -0.35;
       held.right = mag > 0.25 && nx > 0.35;
-      if (mag > 0.25) moveAngle = Math.atan2(dy, dx);
+      if (mag > 0.25) {
+        moveAngle = Math.atan2(dy, dx);
+        driveAngle = moveAngle;
+        driveMag = mag;
+      } else {
+        driveAngle = null;
+        driveMag = 0;
+      }
       knob.style.transform = `translate(${nx * 34 * mag}px, ${ny * 34 * mag}px)`;
     }
     function clearStick() {
@@ -126,6 +172,8 @@ export function createInput(canvas) {
       held.down = false;
       held.left = false;
       held.right = false;
+      driveAngle = null;
+      driveMag = 0;
       knob.style.transform = '';
       stickId = null;
     }
@@ -210,6 +258,12 @@ export function createInput(canvas) {
     }, () => {
       held.sprint = false;
     });
+    pressButton('btn-zoom-in', () => {
+      zoom = clampZoom(zoom * 1.25);
+    });
+    pressButton('btn-zoom-out', () => {
+      zoom = clampZoom(zoom / 1.25);
+    });
     touchUI.addEventListener('contextmenu', (event) => event.preventDefault());
     window.addEventListener('blur', () => {
       clearStick();
@@ -232,6 +286,9 @@ export function createInput(canvas) {
     get mouseX() { return mouseX; },
     get mouseY() { return mouseY; },
     get mouseDown() { return mouseDown; },
+    get driveAngle() { return driveAngle; },
+    get driveMag() { return driveMag; },
+    get zoom() { return zoom; },
     takeClick() {
       const was = clicked;
       clicked = false;
