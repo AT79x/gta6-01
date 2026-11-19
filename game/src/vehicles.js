@@ -85,9 +85,21 @@ export function showMessage(state, text) {
 /** Arcade driving: forward is W, brake/reverse is S, steering scales with speed. */
 export function updateDriving(state, car, input, dt) {
   const spec = car.spec;
-  const forward = (input.up ? 1 : 0) - (input.down ? 1 : 0);
-  const steer = (input.left ? -1 : 0) + (input.right ? 1 : 0);
+  let forward = (input.up ? 1 : 0) - (input.down ? 1 : 0);
+  let steer = (input.left ? -1 : 0) + (input.right ? 1 : 0);
   const handbrake = input.handbrake;
+
+  // Touch stick: steer the car toward the pushed direction on screen.
+  // Keyboard steering is relative to the car's nose, which feels inverted on
+  // a phone whenever the car points down-screen, so touch overrides it.
+  const touchAngle = typeof input.driveAngle === 'number' ? input.driveAngle : null;
+  if (touchAngle !== null) {
+    forward = input.driveMag > 0.25 ? 1 : 0;
+    let diff = touchAngle - car.angle;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    steer = Math.max(-1, Math.min(1, diff * 2.5));
+  }
 
   if (forward > 0) car.speed += spec.accel * dt;
   else if (forward < 0) {
