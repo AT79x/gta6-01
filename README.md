@@ -50,6 +50,14 @@ owes $20,000 to the fixer **Vera Kessler**. Drive, steal, run — and pay it bac
 | P / Esc | Pause |
 | S (paused) | Save game |
 | Q (paused) | Quit to title |
+
+### Touch controls (phones and tablets)
+
+On a touch device the game shows a virtual stick (bottom left) for moving and
+driving, and buttons for TEMBAK (hold to keep firing), MASUK (enter/exit car),
+MISI (next story job), PUKUL, LARI (sprint / handbrake) and JEDA (pause).
+Tap the world to aim; the pistol only refills from ammo pickups, so walk to
+one when the magazine runs dry.
 | C (title) | Continue from save |
 
 ## Play it
