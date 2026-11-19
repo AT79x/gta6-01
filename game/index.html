@@ -38,6 +38,13 @@
   }
   .tbtn:active { background: rgba(255,255,255,.35); }
   #btn-fire { width: 72px; height: 72px; background: rgba(200,40,60,.6); font-size: 12px; }
+  #zoom-buttons {
+    position: fixed; left: 12px; top: 50%; z-index: 10;
+    display: none; flex-direction: column; gap: 10px;
+    transform: translateY(-50%); touch-action: none;
+  }
+  body.touch #zoom-buttons { display: flex; }
+  #zoom-buttons .tbtn { width: 44px; height: 44px; font-size: 20px; }
 </style>
 </head>
 <body>
@@ -45,6 +52,10 @@
 <p id="status" role="status" aria-live="polite"></p>
 <div id="touch-ui" aria-hidden="true">
   <div id="stick"><div id="stick-knob"></div></div>
+  <div id="zoom-buttons">
+    <button class="tbtn" id="btn-zoom-in" type="button">+</button>
+    <button class="tbtn" id="btn-zoom-out" type="button">−</button>
+  </div>
   <div id="touch-buttons">
     <div class="tbtn-row">
       <button class="tbtn" id="btn-mission" type="button">MISI</button>
