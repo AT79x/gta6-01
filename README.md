@@ -57,7 +57,10 @@ On a touch device the game shows a virtual stick (bottom left) for moving and
 driving, and buttons for TEMBAK (hold to keep firing), MASUK (enter/exit car),
 MISI (next story job), PUKUL, LARI (sprint / handbrake) and JEDA (pause).
 Tap the world to aim; the pistol only refills from ammo pickups, so walk to
-one when the magazine runs dry.
+one when the magazine runs dry. While driving, push the stick where you want
+the car to go — steering is relative to the screen, not the car's nose.
+Pinch or use the + / − buttons (left edge) to zoom the world in and out; the
+HUD is drawn in screen pixels, so it stays readable on phones.
 | C (title) | Continue from save |
 
 ## Play it
