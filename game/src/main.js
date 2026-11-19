@@ -162,14 +162,14 @@ export function stepGame(input, dt) {
   }
   if (actions & ACTION_TRIAL) startTimeTrial(state);
   if (actions & ACTION_PUNCH && player.onFoot) {
-    const aim = aimAngle(state, renderer.screenToWorld(input.mouseX, input.mouseY));
+    const aim = aimAngle(state, renderer.screenToWorld(input.mouseX, input.mouseY, state.camera));
     if (punch(state, aim)) audio.punch();
   }
   if (actions & ACTION_CONFIRM && !player.onFoot) audio.horn();
 
   // --- shooting (mouse) ---
   if (player.onFoot && input.takeClick && input.takeClick()) {
-    const aim = aimAngle(state, renderer.screenToWorld(input.mouseX, input.mouseY));
+    const aim = aimAngle(state, renderer.screenToWorld(input.mouseX, input.mouseY, state.camera));
     if (shootPistol(state, aim)) audio.shoot();
   }
 
@@ -231,6 +231,7 @@ function runShot(name) {
 
 function runGame() {
   const input = createInput(canvas);
+  window.__input = input;
   let accumulator = 0;
   let last = performance.now();
 
@@ -292,6 +293,7 @@ function runGame() {
 
   function frame(now) {
     requestAnimationFrame(frame);
+    renderer.setZoom(input.zoom);
     accumulator += Math.min((now - last) / 1000, MAX_FRAME);
     last = now;
     if (state.screen === SCREEN_TITLE || state.screen === SCREEN_PAUSED
