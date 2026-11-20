@@ -93,12 +93,27 @@ export function updateDriving(state, car, input, dt) {
   // Keyboard steering is relative to the car's nose, which feels inverted on
   // a phone whenever the car points down-screen, so touch overrides it.
   const touchAngle = typeof input.driveAngle === 'number' ? input.driveAngle : null;
+  let touchSteering = false;
   if (touchAngle !== null) {
-    forward = input.driveMag > 0.25 ? 1 : 0;
+    touchSteering = true;
+    // Pushed direction, wrapped to [-PI, PI] relative to the car's nose.
     let diff = touchAngle - car.angle;
     while (diff > Math.PI) diff -= Math.PI * 2;
     while (diff < -Math.PI) diff += Math.PI * 2;
-    steer = Math.max(-1, Math.min(1, diff * 2.5));
+    if (input.driveMag > 0.25 && Math.abs(diff) > Math.PI / 2) {
+      // The stick points behind the car: reverse toward it, like S on a
+      // keyboard. The nose steers opposite so the tail aims at the stick.
+      // Without this, touch could never back up — and a car nose-first
+      // against a wall had no way out at all.
+      forward = -1;
+      let revDiff = diff + Math.PI;
+      while (revDiff > Math.PI) revDiff -= Math.PI * 2;
+      while (revDiff < -Math.PI) revDiff += Math.PI * 2;
+      steer = Math.max(-1, Math.min(1, -revDiff * 2.5));
+    } else {
+      forward = input.driveMag > 0.25 ? 1 : 0;
+      steer = Math.max(-1, Math.min(1, diff * 2.5));
+    }
   }
 
   if (forward > 0) car.speed += spec.accel * dt;
@@ -114,7 +129,11 @@ export function updateDriving(state, car, input, dt) {
     spawnSkid(state, car);
   }
   car.speed = clamp(car.speed, -spec.reverse, spec.topSpeed);
-  const speedFactor = clamp(Math.abs(car.speed) / 220, 0, 1);
+  // Steering scales with speed, but touch keeps a minimum authority: at
+  // speed 0 the old code could not rotate the car at all, so a slow or
+  // stopped car felt like it could not turn left/right. Keyboard is
+  // untouched (its floor stays 0).
+  const speedFactor = clamp(Math.abs(car.speed) / 220, touchSteering ? 0.25 : 0, 1);
   const turnRate = spec.turn * speedFactor * (car.speed < 0 ? -1 : 1) * (handbrake ? 1.5 : 1);
   car.angle += steer * turnRate * dt;
 
