@@ -194,6 +194,18 @@ export function createInput(canvas) {
     };
     stick.addEventListener('pointerup', endStick);
     stick.addEventListener('pointercancel', endStick);
+    // If the browser drops pointer capture (system gesture, notification
+    // shade, palm rejection), no pointerup/pointercancel reaches the stick
+    // and the car would keep driving by itself with no finger down: clear
+    // on capture loss too, and on any pointerup/cancel for this pointer
+    // that reaches the window instead of the stick.
+    stick.addEventListener('lostpointercapture', endStick);
+    window.addEventListener('pointerup', (event) => {
+      if (event.pointerId === stickId) clearStick();
+    });
+    window.addEventListener('pointercancel', (event) => {
+      if (event.pointerId === stickId) clearStick();
+    });
 
     // Canvas taps still aim (and shoot once) exactly as before.
     canvas.addEventListener('pointerdown', () => {
